@@ -245,16 +245,40 @@ class RepNCSPELAN4(nn.Module):
     def __init__(self, c1, c2, c3, c4, n=1):
         """Initializes CSP-ELAN layer with specified channel sizes, repetitions, and convolutions."""
         super().__init__()
-        self.c = c3 // 2
-        self.cv1 = Conv(c1, c3, 1, 1)
-        self.cv3 = nn.Sequential(RepCSP(c4, c4, n))
-        self.cv4 = Conv(c3 + (1 * c4), c2, 1, 1)
+        self.c_2 = c1
+        self.c_4 = self.c_2 // 2
+        self.cv1 = Conv(c1, self.c_2, 1, 1)
+        self.cv2 = nn.Sequential(RepCSP(self.c_4, self.c_4, n), Conv(self.c_4, self.c_4, 3, 1))
+        self.cv3 = nn.Sequential(RepCSP(self.c_4, self.c_4, n), Conv(self.c_4, self.c_4, 3, 1))
+        self.cv4 = Conv((4 * self.c_4), c2, 1, 1)
 
     def forward(self, x):
         """Forward pass through RepNCSPELAN4 layer."""
         y = list(self.cv1(x).chunk(2, 1))
-        y.extend((m(y[-1])) for m in [self.cv3])
+        y1 = list([y[0]])
+        y2 = list([y[1]])
+        y1.extend((m(y1[-1])) for m in [self.cv2])
+        y2.extend((m(y2[-1])) for m in [self.cv3])
+
+        y = y1 + y2
         return self.cv4(torch.cat(y, 1))
+
+# class RepNCSPELAN4(nn.Module):
+#     """CSP-ELAN."""
+
+#     def __init__(self, c1, c2, c3, c4, n=1):
+#         """Initializes CSP-ELAN layer with specified channel sizes, repetitions, and convolutions."""
+#         super().__init__()
+#         self.c = c3 // 2
+#         self.cv1 = Conv(c1, c3, 1, 1)
+#         self.cv3 = nn.Sequential(RepCSP(c4, c4, n))
+#         self.cv4 = Conv(c3 + (1 * c4), c2, 1, 1)
+
+#     def forward(self, x):
+#         """Forward pass through RepNCSPELAN4 layer."""
+#         y = list(self.cv1(x).chunk(2, 1))
+#         y.extend((m(y[-1])) for m in [self.cv3])
+#         return self.cv4(torch.cat(y, 1))
 
  ########################################################################## 
 
