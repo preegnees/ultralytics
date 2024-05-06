@@ -247,14 +247,13 @@ class RepNCSPELAN4(nn.Module):
         super().__init__()
         self.c = c3 // 2
         self.cv1 = Conv(c1, c3, 1, 1)
-        self.cv2 = nn.Sequential(RepCSP(c3 // 2, c4, n))
         self.cv3 = nn.Sequential(RepCSP(c4, c4, n))
-        self.cv4 = Conv(c3 + (2 * c4), c2, 1, 1)
+        self.cv4 = Conv(c3 + (1 * c4), c2, 1, 1)
 
     def forward(self, x):
         """Forward pass through RepNCSPELAN4 layer."""
         y = list(self.cv1(x).chunk(2, 1))
-        y.extend((m(y[-1])) for m in [self.cv2, self.cv3])
+        y.extend((m(y[-1])) for m in [self.cv3])
         return self.cv4(torch.cat(y, 1))
 
  ########################################################################## 
